@@ -1,6 +1,7 @@
+import { SplashScreen } from '@ionic-native/splash-screen';
 import { Component } from '@angular/core';
 import { NavController } from 'ionic-angular';
-import { DomSanitizer, SafeResourceUrl } from '@angular/platform-browser';
+import { File } from '@ionic-native/file';
 
 import jsPDF from 'jspdf';
 
@@ -10,11 +11,11 @@ import jsPDF from 'jspdf';
 })
 export class HomePage {
 
-  constructor(public navCtrl: NavController, private domSanitizer: DomSanitizer) {
+  constructor(public navCtrl: NavController, private file: File) {
 
   }
 
-  pdf: SafeResourceUrl;
+  pdf: '';
 
   display() {
     return this.pdf !== undefined;
@@ -24,6 +25,30 @@ export class HomePage {
     { name: 'nikhill1', id: '1', data: 'temp1' },
     { name: 'nikhill2', id: '2', data: 'temp2' }
   ];
+
+  b64toBlob = (b64Data, contentType, sliceSize?) => {
+    contentType = contentType || '';
+    sliceSize = sliceSize || 512;
+
+    var byteCharacters = atob(b64Data);
+    var byteArrays = [];
+
+    for (var offset = 0; offset < byteCharacters.length; offset += sliceSize) {
+      var slice = byteCharacters.slice(offset, offset + sliceSize);
+
+      var byteNumbers = new Array(slice.length);
+      for (var i = 0; i < slice.length; i++) {
+        byteNumbers[i] = slice.charCodeAt(i);
+      }
+
+      var byteArray = new Uint8Array(byteNumbers);
+
+      byteArrays.push(byteArray);
+    }
+
+    var blob = new Blob(byteArrays, { type: contentType });
+    return blob;
+  }
 
   createPdf() {
     const doc = new jsPDF()
@@ -39,18 +64,26 @@ export class HomePage {
     doc.text('Id', idX, 20);
     doc.text('Data', dataX, 20);
 
-
-
     this.content.forEach((item, index) => {
-      let y = startY + (advanceY * index);
+      const y = startY + (advanceY * index);
       doc.text(item.name, nameX, y);
       doc.text(item.id, idX, y);
       doc.text(item.data, dataX, y);
     });
 
-    //doc.save('a4.pdf')
-    this.pdf = this.domSanitizer.bypassSecurityTrustResourceUrl(doc.output('datauri'));
+    const base64 = (doc.output('datauri') as string).split(',')[1];
 
+    const blob = this.b64toBlob(base64, 'application/pdf');
+
+    const filename = `tester${Math.floor(Math.random() * 1000000)}.pdf`;
+
+    const dir = this.file.cacheDirectory
+
+    this.file.writeFile(dir, filename, blob)
+      .then(res => {
+        alert(`Written ${filename} to ${dir}`);
+        console.log(res);
+      });
 
   }
 
