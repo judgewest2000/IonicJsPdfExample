@@ -12,4 +12,8 @@
         If you get lost, the <a href="http://ionicframework.com/docs/v2">docs</a> will be your guide.
     </p>
     <button ion-button (click)="createPdf();">Create PDF</button>
+
+    <div *ngIf="display()">
+        <iframe style="width: 100%; height: 300px;" [src]="pdf" type='application/pdf'></iframe>
+    </div>
 </ion-content>
